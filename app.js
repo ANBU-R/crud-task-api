@@ -1,13 +1,13 @@
 //import
 const express = require("express");
 const mongooseInst = require("./database/mongoose");
-const task = require("./database/models/task");
-const taskList = require("./database/models/taskList");
+const tasks = require("./database/models/task");
+const taskLists = require("./database/models/taskList");
 const { response } = require("express");
 //inital setup
 const app = express();
 
-//middle ware
+//middleware
 //1 to tell express we are using json format
 app.use(express.json());
 //cors control
@@ -29,7 +29,7 @@ app.use((req, res, next) => {
 //routes
 //1 getting all task list
 app.get("/tasklists", (req, res) => {
-  taskList
+  taskLists
     .find({})
     .then((result) => {
       //send fetched data to the browser as a json format
@@ -44,7 +44,7 @@ app.get("/tasklists", (req, res) => {
 
 app.post("/tasklists", (req, res) => {
   let taskListObj = { title: req.body.title };
-  taskList(taskListObj)
+  taskLists(taskListObj)
     .save()
     .then((result) => res.status(201).send(result))
     .catch((err) => {
@@ -53,20 +53,20 @@ app.post("/tasklists", (req, res) => {
 });
 
 // 3 get single taskList
-app.get("/tasklists/:id", (req, res) => {
-  let id = req.params.id;
-  taskList
-    .findById(id)
+app.get("/tasklists/:tasklistid", (req, res) => {
+  let tasklistid = req.params.tasklistid;
+  taskLists
+    .findById(tasklistid)
     .then((response) => res.send(response))
     .catch((err) => console.log(err));
 });
 
 // update tasklist
 //4 full update
-app.put("/tasklists/:id", (req, res) => {
-  let id = req.params.id;
-  taskList
-    .findByIdAndUpdate(id, { $set: req.body })
+app.put("/tasklists/:tasklistid", (req, res) => {
+  let tasklistid = req.params.tasklistid;
+  taskLists
+    .findByIdAndUpdate(tasklistid, { $set: req.body })
     .then((result) => {
       res.status(204).send(result);
       log(result);
@@ -75,23 +75,78 @@ app.put("/tasklists/:id", (req, res) => {
 });
 // partial update
 
-app.patch("/tasklists/:id", (req, res) => {
-  let id = req.params.id;
-  taskList
-    .findByIdAndUpdate(id, { $set: req.body })
+app.patch("/tasklists/:tasklistid", (req, res) => {
+  let tasklistid = req.params.tasklistid;
+  taskLists
+    .findByIdAndUpdate(tasklistid, { $set: req.body })
     .then((result) => res.status(204).send(result))
     .catch((err) => console.log(err));
 });
 
 // delete method
 
-app.delete("/tasklists/:id", (req, res) => {
-  let id = req.params.id;
-  taskList
-    .findByIdAndDelete(id)
+app.delete("/tasklists/:tasklistid", (req, res) => {
+  let tasklistid = req.params.tasklistid;
+  taskLists
+    .findByIdAndDelete(tasklistid)
     .then((result) => res.status(202).send(result))
     .catch((err) => console.log(err));
 });
+
+//crud operation for task
+// get all tasks belongs to one tasklist
+
+app.get("/tasklists/:tasklistid/tasks", (req, res) => {
+  let tasklistid = req.params.tasklistid;
+  tasks
+    .find({ _tasklistId: tasklistid })
+    .then((result) => res.send(result))
+    .catch((err) => console.log(err));
+});
+//create task inside a tasklist
+
+app.post("/tasklists/:tasklistid/tasks", (req, res) => {
+  let taskObj = { title: req.body.title, _tasklistId: req.params.tasklistid };
+  tasks(taskObj)
+    .save()
+    .then((result) => res.send(result))
+    .catch((err) => console.log(err));
+});
+
+//get one particular task
+app.get("/tasklists/:tasklistid/tasks/:taskid", (req, res) => {
+  tasks
+    .findOne({ _tasklistId: req.params.tasklistid, _id: req.params.taskid })
+    .then((result) => res.send(result))
+    .catch((err) => console.log(err));
+});
+
+//update task
+
+app.patch("/tasklists/:tasklistid/tasks/:taskid", (req, res) => {
+  tasks
+    .findOneAndUpdate(
+      { _tasklistId: req.params.tasklistid, _id: req.params.taskid },
+      { $set: req.body }
+    )
+    .then((result) => res.send(result))
+    .catch((err) => console.log(err));
+});
+
+//delete task list
+app.delete("/tasklists/:tasklistid/tasks/:taskid", (req, res) => {
+  tasks
+    .findOneAndDelete({
+      _tasklistId: req.params.tasklistid,
+      _id: req.params.taskid,
+    })
+    .then((result) => res.send(result))
+    .catch((err) => console.log(err));
+});
+
+//
+//
+//
 // starting server
 app.listen(3000, () => {
   console.log("server started on localhost:3000");
